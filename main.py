@@ -25,6 +25,11 @@ if __name__ == "__main__":
 
 
     # Подключение к API компаса
+    # Найти где-то переменную отвечающую за клетку
+    # Заполнить все клетки (фамилии, компанию, дату)
+    # Найти переменную отвечающую за шероховатость
+    # Записать шероховатость
+
     kompas_api = KompasAPI()
     lay_out_sheets = kompas_api.kompas_document.LayoutSheets
     lay_out_sheet = lay_out_sheets.ItemByNumber(1)
