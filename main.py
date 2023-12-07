@@ -39,5 +39,6 @@ if __name__ == "__main__":
     date = dt.datetime.today()
 
     print(date)
+    # чет новое для github
 
 
