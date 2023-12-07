@@ -1,5 +1,6 @@
 import pythoncom
 from win32com.client import Dispatch, gencache, VARIANT
+import datetime as dt
 
 
 class KompasAPI:
@@ -17,8 +18,10 @@ class KompasAPI:
 
 
 if __name__ == "__main__":
-    invent_surname = 120  # номер графы Фамилии разработчика
-    company_name = 9 # номер графы фирмы
+    id_invent_surname = 120  # номер графы Фамилии разработчика
+    id_company_name = 9 # номер графы фирмы
+
+    company_name = 'ООО "Горные технологии \nи инновации"'
 
 
     # Подключение к API компаса
@@ -27,12 +30,14 @@ if __name__ == "__main__":
     lay_out_sheet = lay_out_sheets.ItemByNumber(1)
 
     stamp = lay_out_sheet.Stamp
-    text = stamp.Text(company_name)
+    text = stamp.Text(id_company_name)
 
     text.Str = 'ООО "Горные технологии \nи инновации"'
 
     stamp.Update()
 
-    #
+    date = dt.datetime.today()
+
+    print(date)
 
 
