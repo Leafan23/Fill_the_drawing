@@ -11,18 +11,24 @@ class KompasAPI:
             Dispatch("Kompas.Application.7")._oleobj_.QueryInterface(self.api7.IApplication.CLSID, pythoncom.IID_IDispatch))
 
         self.kompas_document = self.application.ActiveDocument
-        self.kompas_document_3d = self.api7.IKompasDocument3D(self.kompas_document)
-        self.part_7 = self.kompas_document_3d.TopPart
-        self.property_keeper = self.api7.IPropertyKeeper(self.part_7)
-        self.property_mng = self.api7.IPropertyMng(self.application)
 
 
 if __name__ == "__main__":
-    id_invent_surname = 120  # номер графы Фамилии разработчика
+    id_developer_surname = 120  # номер графы Фамилии разработчика
+    id_inspector_surname = 0
+    id_technical_inspector_surname = 0
+    id_standard_control_inspector_surname = 0
+    id_supervisor_surname = 0
     id_company_name = 9 # номер графы фирмы
+    id_date = 0
 
+    developer_surname = 'Родченко'
+    inspector_surname = 'Филатов'
+    technical_inspector_surname = ''
+    standard_control_inspector_surname = ''
+    supervisor_surname = 'Шнякин'
     company_name = 'ООО "Горные технологии \nи инновации"'
-
+    date = ''
 
     # Подключение к API компаса
     # Найти где-то переменную отвечающую за клетку
@@ -34,6 +40,11 @@ if __name__ == "__main__":
     lay_out_sheets = kompas_api.kompas_document.LayoutSheets
     lay_out_sheet = lay_out_sheets.ItemByNumber(1)
 
+    kompas_document_2d = kompas_api.api7.IKompasDocument2D(kompas_api.kompas_document)
+    drawing_document = kompas_api.api7.IDrawingDocument(kompas_document_2d)
+    spec_rough = drawing_document.SpecRough
+    print(spec_rough.Text)
+
     stamp = lay_out_sheet.Stamp
     text = stamp.Text(id_company_name)
 
@@ -44,6 +55,5 @@ if __name__ == "__main__":
     date = dt.datetime.today()
 
     print(date)
-    # чет новое для github
 
 
