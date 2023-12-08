@@ -13,31 +13,55 @@ class KompasAPI:
 
         self.kompas_document = self.application.ActiveDocument
 
-    def add_stamp_string(self):
-        pass
+        if self.kompas_document.DocumentType == 1:
+            self.lay_out_sheets = self.kompas_document.LayoutSheets
+            self.lay_out_sheet = self.lay_out_sheets.ItemByNumber(1)
+            self.stamp = self.lay_out_sheet.Stamp
+
+            self.kompas_document_2d = self.api7.IKompasDocument2D(self.kompas_document)
+            self.drawing_document = self.api7.IDrawingDocument(self.kompas_document_2d)
+            self.spec_rough = self.drawing_document.SpecRough
+        else:
+            self.application.MessageBoxEx("Данный макрос работает только с чертежом",
+                                                "Документ не является чертежом", 0)
+
+    def add_stamp_string(self, id, value):
+
+        self.text = self.stamp.Text(id)
+        self.text.Str = value
+
+    def spec_rough_print(self, value):
+        self.spec_rough.Text = value
+        self.spec_rough.Update()
 
 
 if __name__ == "__main__":
-    id_developer_surname = 120  # номер графы Фамилии разработчика
-    id_inspector_surname = 0  # номер графы фамилии проверяющего
-    id_technical_inspector_surname = 0  # номер графы фамилии Тех контроля
-    id_standard_control_inspector_surname = 0  # номер графы фамилии нормоконтроля
-    id_supervisor_surname = 0  # номер графы утверждающего
-    id_company_name = 9  # номер графы фирмы
-    id_date = 0
-
-    developer_surname = 'Родченко'
-    inspector_surname = 'Филатов'
-    technical_inspector_surname = ''
-    standard_control_inspector_surname = ''
-    supervisor_surname = 'Шнякин'
-    company_name = 'ООО "Горные технологии \nи инновации"'
-    date = ''
-
     config = configparser.ConfigParser()
-    config.read('config.ini')
-    print(config['Surnames'])
+    config.read('config.ini', encoding="utf-8")
 
+    id_developer_surname = int(config['ID']['id_developer_surname'])  # номер графы Фамилии разработчика
+    id_inspector_surname = int(config['ID']['id_inspector_surname'])  # номер графы фамилии проверяющего
+    id_technical_inspector_surname = int(config['ID']['id_technical_inspector_surname'])
+                                                                                    # номер графы фамилии Тех контроля
+    id_standard_control_inspector_surname = int(config['ID']['id_standard_control_inspector_surname'])
+                                                                                    # номер графы фамилии нормоконтроля
+    id_supervisor_surname = int(config['ID']['id_supervisor_surname'])  # номер графы утверждающего
+    id_company_name = int(config['ID']['id_company_name'])  # номер графы фирмы
+    id_date = int(config['ID']['id_date'])
+
+    developer_surname = config['Surnames']['developer_surname']
+    inspector_surname = config['Surnames']['inspector_surname']
+    technical_inspector_surname = config['Surnames']['technical_inspector_surname']
+    standard_control_inspector_surname = config['Surnames']['standard_control_inspector_surname']
+    supervisor_surname = config['Surnames']['supervisor_surname']
+
+    company_name = config['Surnames']['company_name']
+    company_name = company_name.replace(r'\n', '\n')
+
+    now_day = dt.datetime.today()
+    date = str(now_day.day) + '.' + str(now_day.month) + '.' + str(now_day.year)
+
+    # Получение данных для заполнения
     # Подключение к API компаса
     # Найти где-то переменную отвечающую за клетку
     # Заполнить все клетки (фамилии, компанию, дату)
@@ -45,25 +69,17 @@ if __name__ == "__main__":
     # Записать шероховатость
 
     kompas_api = KompasAPI()
-    lay_out_sheets = kompas_api.kompas_document.LayoutSheets
-    lay_out_sheet = lay_out_sheets.ItemByNumber(1)
 
-    kompas_document_2d = kompas_api.api7.IKompasDocument2D(kompas_api.kompas_document)
-    drawing_document = kompas_api.api7.IDrawingDocument(kompas_document_2d)
-    spec_rough = drawing_document.SpecRough
-    print(spec_rough.Text)
-    spec_rough.Text = 'Ra 12,5'
-    spec_rough.Update()
+    kompas_api.add_stamp_string(id_developer_surname, developer_surname)
+    kompas_api.add_stamp_string(id_inspector_surname, inspector_surname)
+    kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname)
+    kompas_api.add_stamp_string(id_standard_control_inspector_surname, standard_control_inspector_surname)
+    kompas_api.add_stamp_string(id_supervisor_surname, supervisor_surname)
+    kompas_api.add_stamp_string(id_company_name, company_name)
+    kompas_api.add_stamp_string(id_date, date)
 
-    stamp = lay_out_sheet.Stamp
-    text = stamp.Text(id_company_name)
+    kompas_api.spec_rough_print(config['default_rough']['rough'])
 
-    text.Str = 'ООО "Горные технологии \nи инновации"'
-
-    stamp.Update()
-
-    date = dt.datetime.today()
-
-    print(date)
+    kompas_api.stamp.Update()
 
 
