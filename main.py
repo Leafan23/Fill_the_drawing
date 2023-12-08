@@ -1,6 +1,7 @@
 import pythoncom
 from win32com.client import Dispatch, gencache, VARIANT
 import datetime as dt
+import configparser
 
 
 class KompasAPI:
@@ -12,14 +13,17 @@ class KompasAPI:
 
         self.kompas_document = self.application.ActiveDocument
 
+    def add_stamp_string(self):
+        pass
+
 
 if __name__ == "__main__":
     id_developer_surname = 120  # номер графы Фамилии разработчика
-    id_inspector_surname = 0
-    id_technical_inspector_surname = 0
-    id_standard_control_inspector_surname = 0
-    id_supervisor_surname = 0
-    id_company_name = 9 # номер графы фирмы
+    id_inspector_surname = 0  # номер графы фамилии проверяющего
+    id_technical_inspector_surname = 0  # номер графы фамилии Тех контроля
+    id_standard_control_inspector_surname = 0  # номер графы фамилии нормоконтроля
+    id_supervisor_surname = 0  # номер графы утверждающего
+    id_company_name = 9  # номер графы фирмы
     id_date = 0
 
     developer_surname = 'Родченко'
@@ -29,6 +33,10 @@ if __name__ == "__main__":
     supervisor_surname = 'Шнякин'
     company_name = 'ООО "Горные технологии \nи инновации"'
     date = ''
+
+    config = configparser.ConfigParser()
+    config.read('config.ini')
+    print(config['Surnames'])
 
     # Подключение к API компаса
     # Найти где-то переменную отвечающую за клетку
@@ -44,6 +52,8 @@ if __name__ == "__main__":
     drawing_document = kompas_api.api7.IDrawingDocument(kompas_document_2d)
     spec_rough = drawing_document.SpecRough
     print(spec_rough.Text)
+    spec_rough.Text = 'Ra 12,5'
+    spec_rough.Update()
 
     stamp = lay_out_sheet.Stamp
     text = stamp.Text(id_company_name)
