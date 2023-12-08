@@ -2,6 +2,7 @@ import pythoncom
 from win32com.client import Dispatch, gencache, VARIANT
 import datetime as dt
 import configparser
+import os.path
 
 
 class KompasAPI:
@@ -35,9 +36,35 @@ class KompasAPI:
         self.spec_rough.Update()
 
 
-if __name__ == "__main__":
+def config_create():
     config = configparser.ConfigParser()
-    config.read('config.ini', encoding="utf-8")
+    if os.path.exists(r'config.ini'):
+        config.read('config.ini', encoding="utf-8")
+    else:
+        config.add_section('ID')
+        config.add_section('Surnames')
+        config.add_section('default_rough')
+        config.set('ID', 'id_developer_surname', '110')
+        config.set('ID', 'id_inspector_surname', '111')
+        config.set('ID', 'id_technical_inspector_surname', '112')
+        config.set('ID', 'id_standard_control_inspector_surname', '114')
+        config.set('ID', 'id_supervisor_surname', '115')
+        config.set('ID', 'id_company_name', '9')
+        config.set('ID', 'id_date', '130')
+        config.set('Surnames', 'developer_surname', 'Иванов')
+        config.set('Surnames', 'inspector_surname', '')
+        config.set('Surnames', 'technical_inspector_surname', '')
+        config.set('Surnames', 'standard_control_inspector_surname', '')
+        config.set('Surnames', 'supervisor_surname', '')
+        config.set('Surnames', 'company_name', r'ООО "Рога \nи копыта"')
+        config.set('default_rough', 'rough', 'Ra 12,5')
+        with open('config.ini', 'w') as config_file:
+            config.write(config_file)
+    return config
+
+
+if __name__ == "__main__":
+    config = config_create()
 
     id_developer_surname = int(config['ID']['id_developer_surname'])  # номер графы Фамилии разработчика
     id_inspector_surname = int(config['ID']['id_inspector_surname'])  # номер графы фамилии проверяющего
