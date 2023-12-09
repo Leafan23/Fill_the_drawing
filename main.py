@@ -25,6 +25,11 @@ class KompasAPI:
         else:
             self.application.MessageBoxEx("Данный макрос работает только с чертежом",
                                                 "Документ не является чертежом", 0)
+        self.kompas_document_2D = self.api7.IKompasDocument2D(self.kompas_document)
+        self.views_and_layers_manager = self.kompas_document_2D.ViewsAndLayersManager
+        self.views = self.views_and_layers_manager.Views
+        self.view = self.views.ActiveView
+        self.association_view = self.api7.IAssociationView(self.view)
 
     def add_stamp_string(self, id, value):
 
@@ -34,6 +39,11 @@ class KompasAPI:
     def spec_rough_print(self, value):
         self.spec_rough.Text = value
         self.spec_rough.Update()
+
+    def chech_doc_type(self):  # Проверка на сборку/деталь. Если сборка False, если деталь True
+        if self.association_view.SourceFileName[-3:] == 'm3d':
+            return True
+        return False
 
 
 def config_create():
@@ -104,8 +114,8 @@ if __name__ == "__main__":
     kompas_api.add_stamp_string(id_supervisor_surname, supervisor_surname)
     kompas_api.add_stamp_string(id_company_name, company_name)
     kompas_api.add_stamp_string(id_date, date)
-
-    kompas_api.spec_rough_print(config['default_rough']['rough'])
+    if kompas_api.chech_doc_type():
+        kompas_api.spec_rough_print(config['default_rough']['rough'])
 
     kompas_api.stamp.Update()
 
