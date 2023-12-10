@@ -36,6 +36,9 @@ class KompasAPI:
         self.text = self.stamp.Text(id)
         self.text.Str = value
 
+    def add_drawing_number(self):
+        pass
+
     def spec_rough_print(self, value):
         self.spec_rough.Text = value
         self.spec_rough.Update()
@@ -46,10 +49,11 @@ class KompasAPI:
         return False
 
 
-def config_create():
+def config_create(path_name):
     config = configparser.ConfigParser()
-    if os.path.exists(r'config.ini'):
-        config.read('config.ini', encoding="utf-8")
+    if os.path.exists(os.path.join(path_name, 'config.ini')):
+        config.read(os.path.join(path_name, 'config.ini'), encoding="utf-8")
+        print('config открыт по пути ..', os.path.join(path_name, 'config.ini'))
     else:
         config.add_section('ID')
         config.add_section('Surnames')
@@ -68,13 +72,14 @@ def config_create():
         config.set('Surnames', 'supervisor_surname', '')
         config.set('Surnames', 'company_name', r'ООО "Рога \nи копыта"')
         config.set('default_rough', 'rough', 'Ra 12,5')
-        with open('config.ini', 'w') as config_file:
+        with open(os.path.join(path_name, 'config.ini'), 'w') as config_file:
             config.write(config_file)
     return config
 
 
 if __name__ == "__main__":
-    config = config_create()
+    dir_name = os.path.dirname(os.path.abspath(__file__))
+    config = config_create(dir_name)
 
     id_developer_surname = int(config['ID']['id_developer_surname'])  # номер графы Фамилии разработчика
     id_inspector_surname = int(config['ID']['id_inspector_surname'])  # номер графы фамилии проверяющего
@@ -114,9 +119,31 @@ if __name__ == "__main__":
     kompas_api.add_stamp_string(id_supervisor_surname, supervisor_surname)
     kompas_api.add_stamp_string(id_company_name, company_name)
     kompas_api.add_stamp_string(id_date, date)
+
     if kompas_api.chech_doc_type():
         kompas_api.spec_rough_print(config['default_rough']['rough'])
 
-    kompas_api.stamp.Update()
+    print(kompas_api.stamp.Text(2).Str)
+    #kompas_api.stamp.Text(2).Str = kompas_api.stamp.Text(2).Str + ' СБ'
+    property_mng = kompas_api.api7.IPropertyMng(kompas_api.application)
+    print(property_mng.PropertyCount(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw'))
+    print(property_mng.GetProperties(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw'))
+    for ui in property_mng.GetProperties(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw'):
+        print(ui.Id, ' ', ui.Name, ' ', ui.ListVal)
+    property_keeper = kompas_api.api7.IPropertyKeeper(kompas_api.kompas_document_2D)
+    print(property_keeper.GetPropertyValue(property_mng.GetProperties(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw')[0], '', True, True))
+    print(property_keeper.Properties)
+    print(property_keeper.GetComplexPropertyValue(property_mng.GetProperties(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw')[0]))
 
+    drawing_name = '02-05-04-02-ТХ8.Н9.03'
+    val_str =   '<property id="marking" fromSource="true" direction="">' \
+                f'<property id="base" value="{drawing_name}" type="string" />' \
+                '<property id="documentNumber" value="СБ" type="string" />'
+    print(val_str)
+
+    print('Устанавливаю комплексное свойство ... ... ...', property_keeper.SetComplexPropertyValue(property_mng.GetProperties(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw')[0], val_str))
+    property_mng.GetProperties(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw')[0].Update()
+    print(property_keeper.Properties)
+
+    kompas_api.stamp.Update()
 
