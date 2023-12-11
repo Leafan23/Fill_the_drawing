@@ -10,7 +10,8 @@ class KompasAPI:
         #  Подключим описание интерфейсов API7
         self.api7 = gencache.EnsureModule("{69AC2981-37C0-4379-84FD-5DD2F3C0A520}", 0, 1, 0)
         self.application = self.api7.IApplication(
-            Dispatch("Kompas.Application.7")._oleobj_.QueryInterface(self.api7.IApplication.CLSID, pythoncom.IID_IDispatch))
+            Dispatch("Kompas.Application.7")._oleobj_.QueryInterface(self.api7.IApplication.CLSID,
+                                                                     pythoncom.IID_IDispatch))
 
         self.kompas_document = self.application.ActiveDocument
 
@@ -22,14 +23,15 @@ class KompasAPI:
             self.kompas_document_2d = self.api7.IKompasDocument2D(self.kompas_document)
             self.drawing_document = self.api7.IDrawingDocument(self.kompas_document_2d)
             self.spec_rough = self.drawing_document.SpecRough
+            self.views_and_layers_manager = self.kompas_document_2d.ViewsAndLayersManager
+            self.views = self.views_and_layers_manager.Views
+            self.view = self.views.ActiveView
+            self.association_view = self.api7.IAssociationView(self.view)
+            self.property_mng = self.api7.IPropertyMng(self.application)
+            self.property_keeper = self.api7.IPropertyKeeper(self.kompas_document_2d)
         else:
             self.application.MessageBoxEx("Данный макрос работает только с чертежом",
-                                                "Документ не является чертежом", 0)
-        self.kompas_document_2D = self.api7.IKompasDocument2D(self.kompas_document)
-        self.views_and_layers_manager = self.kompas_document_2D.ViewsAndLayersManager
-        self.views = self.views_and_layers_manager.Views
-        self.view = self.views.ActiveView
-        self.association_view = self.api7.IAssociationView(self.view)
+                                          "Документ не является чертежом", 0)
 
     def add_stamp_string(self, id, value):
 
@@ -37,7 +39,25 @@ class KompasAPI:
         self.text.Str = value
 
     def add_drawing_number(self):
-        pass
+
+        print(self.stamp.Text(2).Str)
+        print(self.stamp.Text(1).Str)
+        if self.stamp.Text(2).Str[-2:] != 'СБ':
+            self.drawing_name = self.stamp.Text(2).Str
+            self.val_str = f'<property id="marking" fromSource="true" direction="">' \
+                           f'<property id="base" value="{self.drawing_name}" type="string" />' \
+                           f'<property id="documentDelimiter" value=" " type="string" />' \
+                           f'<property id="documentNumber" value="СБ" type="string" />'
+            self.property = self.property_mng.GetProperty(self.kompas_document, 4.0)
+            print(self.property_keeper.GetComplexPropertyValue(self.property, False))
+            self.property_keeper.SetComplexPropertyValue(self.property, self.val_str)
+            self.property.Update()
+            self.stamp.Update()
+            self.property = self.property_mng.GetProperty(self.kompas_document, 5.0)
+            self.stamp.Text(1).Str = self.property_keeper.GetPropertyValue(self.property, "", True, True)[1]
+            print(self.property.GetPropertyValue(self.property, True, True))
+            self.property.Update()
+            self.stamp.Update()
 
     def spec_rough_print(self, value):
         self.spec_rough.Text = value
@@ -84,9 +104,9 @@ if __name__ == "__main__":
     id_developer_surname = int(config['ID']['id_developer_surname'])  # номер графы Фамилии разработчика
     id_inspector_surname = int(config['ID']['id_inspector_surname'])  # номер графы фамилии проверяющего
     id_technical_inspector_surname = int(config['ID']['id_technical_inspector_surname'])
-                                                                                    # номер графы фамилии Тех контроля
+    # номер графы фамилии Тех контроля
     id_standard_control_inspector_surname = int(config['ID']['id_standard_control_inspector_surname'])
-                                                                                    # номер графы фамилии нормоконтроля
+    # номер графы фамилии нормоконтроля
     id_supervisor_surname = int(config['ID']['id_supervisor_surname'])  # номер графы утверждающего
     id_company_name = int(config['ID']['id_company_name'])  # номер графы фирмы
     id_date = int(config['ID']['id_date'])
@@ -120,30 +140,14 @@ if __name__ == "__main__":
     kompas_api.add_stamp_string(id_company_name, company_name)
     kompas_api.add_stamp_string(id_date, date)
 
+    print(kompas_api.property_keeper.Properties)
     if kompas_api.chech_doc_type():
         kompas_api.spec_rough_print(config['default_rough']['rough'])
-
-    print(kompas_api.stamp.Text(2).Str)
-    #kompas_api.stamp.Text(2).Str = kompas_api.stamp.Text(2).Str + ' СБ'
-    property_mng = kompas_api.api7.IPropertyMng(kompas_api.application)
-    print(property_mng.PropertyCount(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw'))
-    print(property_mng.GetProperties(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw'))
-    for ui in property_mng.GetProperties(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw'):
-        print(ui.Id, ' ', ui.Name, ' ', ui.ListVal)
-    property_keeper = kompas_api.api7.IPropertyKeeper(kompas_api.kompas_document_2D)
-    print(property_keeper.GetPropertyValue(property_mng.GetProperties(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw')[0], '', True, True))
-    print(property_keeper.Properties)
-    print(property_keeper.GetComplexPropertyValue(property_mng.GetProperties(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw')[0]))
-
-    drawing_name = '02-05-04-02-ТХ8.Н9.03'
-    val_str =   '<property id="marking" fromSource="true" direction="">' \
-                f'<property id="base" value="{drawing_name}" type="string" />' \
-                '<property id="documentNumber" value="СБ" type="string" />'
-    print(val_str)
-
-    print('Устанавливаю комплексное свойство ... ... ...', property_keeper.SetComplexPropertyValue(property_mng.GetProperties(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw')[0], val_str))
-    property_mng.GetProperties(r'C:\Users\Leafan\Desktop\02-05-04-02-ТХ8.Н9.03 СБ Лист Сборочный чертеж.cdw')[0].Update()
-    print(property_keeper.Properties)
-
+    else:
+        kompas_api.add_drawing_number()
+    '''
+    kompas_api.property = kompas_api.property_mng.GetProperty(kompas_api.kompas_document, 4.0)
+    print(kompas_api.stamp.Text(1).Str)
+    print(kompas_api.property_keeper.GetPropertyValue(kompas_api.property, "", True, True)[1])
+    '''
     kompas_api.stamp.Update()
-
