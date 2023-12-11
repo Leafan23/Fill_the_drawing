@@ -30,18 +30,13 @@ class KompasAPI:
             self.property_mng = self.api7.IPropertyMng(self.application)
             self.property_keeper = self.api7.IPropertyKeeper(self.kompas_document_2d)
         else:
-            self.application.MessageBoxEx("Данный макрос работает только с чертежом",
-                                          "Документ не является чертежом", 0)
+            self.application.MessageBoxEx("Данный макрос работает только с чертежом", "Документ не является чертежом", 0)
 
     def add_stamp_string(self, id, value):
-
         self.text = self.stamp.Text(id)
         self.text.Str = value
 
     def add_drawing_number(self):
-
-        print(self.stamp.Text(2).Str)
-        print(self.stamp.Text(1).Str)
         if self.stamp.Text(2).Str[-2:] != 'СБ':
             self.drawing_name = self.stamp.Text(2).Str
             self.val_str = f'<property id="marking" fromSource="true" direction="">' \
@@ -49,15 +44,11 @@ class KompasAPI:
                            f'<property id="documentDelimiter" value=" " type="string" />' \
                            f'<property id="documentNumber" value="СБ" type="string" />'
             self.property = self.property_mng.GetProperty(self.kompas_document, 4.0)
-            print(self.property_keeper.GetComplexPropertyValue(self.property, False))
             self.property_keeper.SetComplexPropertyValue(self.property, self.val_str)
             self.property.Update()
             self.stamp.Update()
             self.property = self.property_mng.GetProperty(self.kompas_document, 5.0)
             self.stamp.Text(1).Str = self.property_keeper.GetPropertyValue(self.property, "", True, True)[1]
-            print(self.property.GetPropertyValue(self.property, True, True))
-            self.property.Update()
-            self.stamp.Update()
 
     def spec_rough_print(self, value):
         self.spec_rough.Text = value
@@ -73,7 +64,6 @@ def config_create(path_name):
     config = configparser.ConfigParser()
     if os.path.exists(os.path.join(path_name, 'config.ini')):
         config.read(os.path.join(path_name, 'config.ini'), encoding="utf-8")
-        print('config открыт по пути ..', os.path.join(path_name, 'config.ini'))
     else:
         config.add_section('ID')
         config.add_section('Surnames')
@@ -123,15 +113,12 @@ if __name__ == "__main__":
     now_day = dt.datetime.today()
     date = str(now_day.day) + '.' + str(now_day.month) + '.' + str(now_day.year)
 
-    # Получение данных для заполнения
-    # Подключение к API компаса
-    # Найти где-то переменную отвечающую за клетку
-    # Заполнить все клетки (фамилии, компанию, дату)
-    # Найти переменную отвечающую за шероховатость
-    # Записать шероховатость
-
     kompas_api = KompasAPI()
 
+    if kompas_api.chech_doc_type():
+        kompas_api.spec_rough_print(config['default_rough']['rough'])
+    else:
+        kompas_api.add_drawing_number()
     kompas_api.add_stamp_string(id_developer_surname, developer_surname)
     kompas_api.add_stamp_string(id_inspector_surname, inspector_surname)
     kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname)
@@ -140,14 +127,4 @@ if __name__ == "__main__":
     kompas_api.add_stamp_string(id_company_name, company_name)
     kompas_api.add_stamp_string(id_date, date)
 
-    print(kompas_api.property_keeper.Properties)
-    if kompas_api.chech_doc_type():
-        kompas_api.spec_rough_print(config['default_rough']['rough'])
-    else:
-        kompas_api.add_drawing_number()
-    '''
-    kompas_api.property = kompas_api.property_mng.GetProperty(kompas_api.kompas_document, 4.0)
-    print(kompas_api.stamp.Text(1).Str)
-    print(kompas_api.property_keeper.GetPropertyValue(kompas_api.property, "", True, True)[1])
-    '''
     kompas_api.stamp.Update()
