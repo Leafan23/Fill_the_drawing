@@ -55,12 +55,18 @@ class KompasAPI:
         self.spec_rough.Text = value
         self.spec_rough.Update()
 
-    def check_doc_type(self):  # Проверка на сборку/деталь. Если сборка False, если деталь True
-        if self.kompas_document.DocumentType == 1 and self.association_view.SourceFileName[-3:] == 'm3d':
-            return 1
-        if self.kompas_document.DocumentType == 3:
+    def check_doc_type(self):  # Проверка на сборку/деталь. # Сборка - 0; Деталь - 1; Спецификация - 2
+        if self.kompas_document.DocumentType == 1 and self.association_view.SourceFileName[-3:] == 'm3d':  # Сборка - 0
+            return 0
+        if self.kompas_document.DocumentType == 3:  # Спецификация - 2
             return 2
-        return 0
+        return 1  # Деталь - 1
+
+    def first_used(self):  # Обработка значения первичного применения. В Сб пишется тот же номер. В деталь убираются 000, в спецификации берется следующий без нулей
+        doc_type = self.check_doc_type()
+        if doc_type == 1:
+            pass
+        pass
 
 
 def config_create(path_name):
