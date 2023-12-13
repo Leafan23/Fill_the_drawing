@@ -15,22 +15,23 @@ class KompasAPI:
 
         self.kompas_document = self.application.ActiveDocument
 
-        if self.kompas_document.DocumentType == 1:
+        if self.kompas_document.DocumentType == 1 or 3:
             self.lay_out_sheets = self.kompas_document.LayoutSheets
             self.lay_out_sheet = self.lay_out_sheets.ItemByNumber(1)
             self.stamp = self.lay_out_sheet.Stamp
 
             self.kompas_document_2d = self.api7.IKompasDocument2D(self.kompas_document)
             self.drawing_document = self.api7.IDrawingDocument(self.kompas_document_2d)
-            self.spec_rough = self.drawing_document.SpecRough
-            self.views_and_layers_manager = self.kompas_document_2d.ViewsAndLayersManager
-            self.views = self.views_and_layers_manager.Views
-            self.view = self.views.ActiveView
-            self.association_view = self.api7.IAssociationView(self.view)
+            if self.kompas_document.DocumentType == 1:
+                self.spec_rough = self.drawing_document.SpecRough
+                self.views_and_layers_manager = self.kompas_document_2d.ViewsAndLayersManager
+                self.views = self.views_and_layers_manager.Views
+                self.view = self.views.ActiveView
+                self.association_view = self.api7.IAssociationView(self.view)
             self.property_mng = self.api7.IPropertyMng(self.application)
             self.property_keeper = self.api7.IPropertyKeeper(self.kompas_document_2d)
         else:
-            self.application.MessageBoxEx("Данный макрос работает только с чертежом", "Документ не является чертежом", 0)
+            self.application.MessageBoxEx("Данный макрос работает только с чертежом или спецификацией", "Документ не является чертежом/спецификацией", 0)
 
     def add_stamp_string(self, id, value):
         self.text = self.stamp.Text(id)
@@ -54,10 +55,12 @@ class KompasAPI:
         self.spec_rough.Text = value
         self.spec_rough.Update()
 
-    def chech_doc_type(self):  # Проверка на сборку/деталь. Если сборка False, если деталь True
-        if self.association_view.SourceFileName[-3:] == 'm3d':
-            return True
-        return False
+    def check_doc_type(self):  # Проверка на сборку/деталь. Если сборка False, если деталь True
+        if self.kompas_document.DocumentType == 1 and self.association_view.SourceFileName[-3:] == 'm3d':
+            return 1
+        if self.kompas_document.DocumentType == 3:
+            return 2
+        return 0
 
 
 def config_create(path_name):
@@ -75,6 +78,7 @@ def config_create(path_name):
         config.set('ID', 'id_supervisor_surname', '115')
         config.set('ID', 'id_company_name', '9')
         config.set('ID', 'id_date', '130')
+        config.set('ID', 'id_first_used', '25')
         config.set('Surnames', 'developer_surname', 'Иванов')
         config.set('Surnames', 'inspector_surname', '')
         config.set('Surnames', 'technical_inspector_surname', '')
@@ -82,6 +86,7 @@ def config_create(path_name):
         config.set('Surnames', 'supervisor_surname', '')
         config.set('Surnames', 'company_name', r'ООО "Рога \nи копыта"')
         config.set('default_rough', 'rough', 'Ra 12,5')
+        config.set('default_rough', 'rough_sign', '0')
         with open(os.path.join(path_name, 'config.ini'), 'w') as config_file:
             config.write(config_file)
     return config
@@ -115,13 +120,16 @@ if __name__ == "__main__":
 
     kompas_api = KompasAPI()
 
-    if kompas_api.chech_doc_type():
-        kompas_api.spec_rough_print(config['default_rough']['rough'])
-    else:
-        kompas_api.add_drawing_number()
+    if kompas_api.check_doc_type() == 1:
+        kompas_api.spec_rough_print(config['default_rough']['rough'])  # если деталь, то напечатать неуказ.
+        # шереховатеость
+    elif kompas_api.check_doc_type() == 0:
+        kompas_api.add_drawing_number()  # если это сборка, то добавить СБ в номер
+    if kompas_api.check_doc_type() != 2:
+        kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname)  # если это
+        # спецификация, то не печатается Т.Контр
     kompas_api.add_stamp_string(id_developer_surname, developer_surname)
     kompas_api.add_stamp_string(id_inspector_surname, inspector_surname)
-    kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname)
     kompas_api.add_stamp_string(id_standard_control_inspector_surname, standard_control_inspector_surname)
     kompas_api.add_stamp_string(id_supervisor_surname, supervisor_surname)
     kompas_api.add_stamp_string(id_company_name, company_name)
