@@ -3,6 +3,7 @@ from win32com.client import Dispatch, gencache, VARIANT
 import datetime as dt
 import configparser
 import os.path
+import sys
 
 
 class KompasAPI:
@@ -14,8 +15,7 @@ class KompasAPI:
                                                                      pythoncom.IID_IDispatch))
 
         self.kompas_document = self.application.ActiveDocument
-
-        if self.kompas_document.DocumentType == 1 or 3:
+        if self.kompas_document.DocumentType == 1 or self.kompas_document.DocumentType == 3:
             self.lay_out_sheets = self.kompas_document.LayoutSheets
             self.lay_out_sheet = self.lay_out_sheets.ItemByNumber(1)
             self.stamp = self.lay_out_sheet.Stamp
@@ -32,10 +32,12 @@ class KompasAPI:
             self.property_keeper = self.api7.IPropertyKeeper(self.kompas_document_2d)
         else:
             self.application.MessageBoxEx("Данный макрос работает только с чертежом или спецификацией", "Документ не является чертежом/спецификацией", 0)
+            sys.exit(1)
 
-    def add_stamp_string(self, id, value):
+    def add_stamp_string(self, id, value, recopy):
         self.text = self.stamp.Text(id)
-        self.text.Str = value
+        if recopy == 1 or self.text.Str == '':
+            self.text.Str = value
 
     def add_drawing_number(self):
         if self.stamp.Text(2).Str[-2:] != 'СБ':
@@ -62,11 +64,21 @@ class KompasAPI:
             return 2
         return 0  # Сборка - 0
 
-    def first_used(self):  # Обработка значения первичного применения. В Сб пишется тот же номер. В деталь убираются 000, в спецификации берется следующий без нулей
+    def first_used(self, value, flag=0):  # Обработка значения первичного применения. В Сб пишется тот же номер. В деталь убираются 000, в спецификации берется следующий без нулей
         doc_type = self.check_doc_type()
-        if doc_type == 1:
-            pass
-        pass
+        if doc_type == 1 and flag == 1:
+            i = value.rfind(".")
+            if value.rfind(".") == -1:
+                return value
+            s = value[:i] + '.000'
+            return s
+        elif doc_type == 0 and flag == 1:
+            i = value.rfind(" СБ")
+            if value.rfind(".") == -1:
+                return value
+            s = value[:i] + ''
+            return s
+        return ''
 
 
 def config_create(path_name):
@@ -77,6 +89,7 @@ def config_create(path_name):
         config.add_section('ID')
         config.add_section('Surnames')
         config.add_section('default_rough')
+        config.add_section('Settings')
         config.set('ID', 'id_developer_surname', '110')
         config.set('ID', 'id_inspector_surname', '111')
         config.set('ID', 'id_technical_inspector_surname', '112')
@@ -93,6 +106,7 @@ def config_create(path_name):
         config.set('Surnames', 'company_name', r'ООО "Рога \nи копыта"')
         config.set('default_rough', 'rough', 'Ra 12,5')
         config.set('default_rough', 'rough_sign', '0')
+        config.set('Settings', 'recopy', '0')
         with open(os.path.join(path_name, 'config.ini'), 'w') as config_file:
             config.write(config_file)
     return config
@@ -129,16 +143,17 @@ if __name__ == "__main__":
     if kompas_api.check_doc_type() == 1:
         kompas_api.spec_rough_print(config['default_rough']['rough'])  # если деталь, то напечатать неуказ.
         # шереховатеость
-        kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname)
+        kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname, int(config['Settings']['recopy']))
     elif kompas_api.check_doc_type() == 0:
         kompas_api.add_drawing_number()  # если это сборка, то добавить СБ в номер
-        kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname)  # если это
+        kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname, int(config['Settings']['recopy']))  # если это
         # спецификация, то не печатается Т.Контр
-    kompas_api.add_stamp_string(id_developer_surname, developer_surname)
-    kompas_api.add_stamp_string(id_inspector_surname, inspector_surname)
-    kompas_api.add_stamp_string(id_standard_control_inspector_surname, standard_control_inspector_surname)
-    kompas_api.add_stamp_string(id_supervisor_surname, supervisor_surname)
-    kompas_api.add_stamp_string(id_company_name, company_name)
-    kompas_api.add_stamp_string(id_date, date)
+    kompas_api.add_stamp_string(id_developer_surname, developer_surname, int(config['Settings']['recopy']))
+    kompas_api.add_stamp_string(id_inspector_surname, inspector_surname, int(config['Settings']['recopy']))
+    kompas_api.add_stamp_string(id_standard_control_inspector_surname, standard_control_inspector_surname, int(config['Settings']['recopy']))
+    kompas_api.add_stamp_string(id_supervisor_surname, supervisor_surname, int(config['Settings']['recopy']))
+    kompas_api.add_stamp_string(id_company_name, company_name, int(config['Settings']['recopy']))
+    kompas_api.add_stamp_string(id_date, date, int(config['Settings']['recopy']))
+    kompas_api.add_stamp_string(int(config['ID']['id_first_used']), kompas_api.first_used(kompas_api.stamp.Text(2).Str, int(config['Settings']['first_used'])), int(config['Settings']['recopy']))
 
     kompas_api.stamp.Update()
