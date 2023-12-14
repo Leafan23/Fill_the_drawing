@@ -56,6 +56,7 @@ class KompasAPI:
     def spec_rough_print(self, value, sign):
         self.spec_rough.Text = value
         self.spec_rough.SignType = sign  # 0 - Без указания типа отбработки; 1 - С удалением слоя материала; 2 - Без удаления слоя материала.
+        self.spec_rough.AddSign = True
         self.spec_rough.Update()
 
     def check_doc_type(self):  # Проверка на сборку/деталь. # Сборка - 0; Деталь - 1; Спецификация - 2
