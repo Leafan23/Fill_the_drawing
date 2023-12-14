@@ -56,11 +56,11 @@ class KompasAPI:
         self.spec_rough.Update()
 
     def check_doc_type(self):  # Проверка на сборку/деталь. # Сборка - 0; Деталь - 1; Спецификация - 2
-        if self.kompas_document.DocumentType == 1 and self.association_view.SourceFileName[-3:] == 'm3d':  # Сборка - 0
-            return 0
+        if self.kompas_document.DocumentType == 1 and self.association_view.SourceFileName[-3:] == 'm3d':  # Деталь - 1
+            return 1
         if self.kompas_document.DocumentType == 3:  # Спецификация - 2
             return 2
-        return 1  # Деталь - 1
+        return 0  # Сборка - 0
 
     def first_used(self):  # Обработка значения первичного применения. В Сб пишется тот же номер. В деталь убираются 000, в спецификации берется следующий без нулей
         doc_type = self.check_doc_type()
@@ -129,9 +129,9 @@ if __name__ == "__main__":
     if kompas_api.check_doc_type() == 1:
         kompas_api.spec_rough_print(config['default_rough']['rough'])  # если деталь, то напечатать неуказ.
         # шереховатеость
+        kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname)
     elif kompas_api.check_doc_type() == 0:
         kompas_api.add_drawing_number()  # если это сборка, то добавить СБ в номер
-    if kompas_api.check_doc_type() != 2:
         kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname)  # если это
         # спецификация, то не печатается Т.Контр
     kompas_api.add_stamp_string(id_developer_surname, developer_surname)
