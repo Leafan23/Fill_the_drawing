@@ -53,8 +53,9 @@ class KompasAPI:
             self.property = self.property_mng.GetProperty(self.kompas_document, 5.0)
             self.stamp.Text(1).Str = self.property_keeper.GetPropertyValue(self.property, "", True, True)[1]
 
-    def spec_rough_print(self, value):
+    def spec_rough_print(self, value, sign):
         self.spec_rough.Text = value
+        self.spec_rough.SignType = sign  # 0 - Без указания типа отбработки; 1 - С удалением слоя материала; 2 - Без удаления слоя материала.
         self.spec_rough.Update()
 
     def check_doc_type(self):  # Проверка на сборку/деталь. # Сборка - 0; Деталь - 1; Спецификация - 2
@@ -64,19 +65,23 @@ class KompasAPI:
             return 2
         return 0  # Сборка - 0
 
-    def first_used(self, value, flag=0):  # Обработка значения первичного применения. В Сб пишется тот же номер. В деталь убираются 000, в спецификации берется следующий без нулей
+    def first_used(self, value, flag):  # Обработка значения первичного применения. В Сб пишется тот же номер. В деталь убираются 000, в спецификации берется следующий без нулей
         doc_type = self.check_doc_type()
         if doc_type == 1 and flag == 1:
             i = value.rfind(".")
             if value.rfind(".") == -1:
                 return value
-            s = value[:i] + '.000'
+            part_code = list(value[i:])
+            part_code[2] = '0'
+            part_code[3] = '0'
+            part_code = ''.join(part_code)
+            s = value[:i] + part_code
             return s
         elif doc_type == 0 and flag == 1:
             i = value.rfind(" СБ")
-            if value.rfind(".") == -1:
+            if value.rfind(" СБ") == -1:
                 return value
-            s = value[:i] + ''
+            s = value[:i]
             return s
         return ''
 
@@ -141,7 +146,7 @@ if __name__ == "__main__":
     kompas_api = KompasAPI()
 
     if kompas_api.check_doc_type() == 1:
-        kompas_api.spec_rough_print(config['default_rough']['rough'])  # если деталь, то напечатать неуказ.
+        kompas_api.spec_rough_print(config['default_rough']['rough'], int(config['default_rough']['rough_sign']))  # если деталь, то напечатать неуказ.
         # шереховатеость
         kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname, int(config['Settings']['recopy']))
     elif kompas_api.check_doc_type() == 0:
