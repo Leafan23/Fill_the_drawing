@@ -15,6 +15,7 @@ class KompasAPI:
                                                                      pythoncom.IID_IDispatch))
 
         self.kompas_document = self.application.ActiveDocument
+        # Document Type 1 - Чертеж; Document Type 3 - Спецификация.
         if self.kompas_document.DocumentType == 1 or self.kompas_document.DocumentType == 3:
             self.lay_out_sheets = self.kompas_document.LayoutSheets
             self.lay_out_sheet = self.lay_out_sheets.ItemByNumber(1)
@@ -23,6 +24,8 @@ class KompasAPI:
             self.kompas_document_2d = self.api7.IKompasDocument2D(self.kompas_document)
             self.drawing_document = self.api7.IDrawingDocument(self.kompas_document_2d)
             if self.kompas_document.DocumentType == 1:
+                self.specification_descriptions = self.kompas_document.SpecificationDescriptions
+                self.specification_description = self.specification_descriptions.Active
                 self.spec_rough = self.drawing_document.SpecRough
                 self.views_and_layers_manager = self.kompas_document_2d.ViewsAndLayersManager
                 self.views = self.views_and_layers_manager.Views
@@ -87,7 +90,7 @@ class KompasAPI:
         return ''
 
 
-def config_create(path_name):
+def config_create(path_name):  # Создание конфиг файла
     config = configparser.ConfigParser()
     if os.path.exists(os.path.join(path_name, 'config.ini')):
         config.read(os.path.join(path_name, 'config.ini'), encoding="utf-8")
@@ -151,7 +154,8 @@ if __name__ == "__main__":
         # шереховатеость
         kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname, int(config['Settings']['recopy']))
     elif kompas_api.check_doc_type() == 0:
-        kompas_api.add_drawing_number()  # если это сборка, то добавить СБ в номер
+        if not kompas_api.specification_description.ShowOnSheet:
+            kompas_api.add_drawing_number()  # если это сборка, то добавить СБ в номер
         kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname, int(config['Settings']['recopy']))  # если это
         # спецификация, то не печатается Т.Контр
     kompas_api.add_stamp_string(id_developer_surname, developer_surname, int(config['Settings']['recopy']))
