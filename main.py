@@ -56,6 +56,21 @@ class KompasAPI:
             self.property = self.property_mng.GetProperty(self.kompas_document, 5.0)
             self.stamp.Text(1).Str = self.property_keeper.GetPropertyValue(self.property, "", True, True)[1]
 
+    def delete_drawing_number(self):
+        if self.stamp.Text(2).Str[-2:] == 'СБ':
+            self.drawing_name = self.stamp.Text(2).Str[:-3]
+            self.val_str = f'<property id="marking" fromSource="true" direction="">' \
+                           f'<property id="base" value="{self.drawing_name}" type="string" />' \
+                           f'<property id="documentDelimiter" value=" " type="string" />' \
+                           f'<property id="documentNumber" value="" type="string" />'
+            self.property = self.property_mng.GetProperty(self.kompas_document, 4.0)
+            self.property_keeper.SetComplexPropertyValue(self.property, self.val_str)
+            self.property.Update()
+            self.stamp.Update()
+            self.property = self.property_mng.GetProperty(self.kompas_document, 5.0)
+            self.stamp.Text(1).Str = self.property_keeper.GetPropertyValue(self.property, "", True, True)[1]
+
+
     def spec_rough_print(self, value, sign):
         self.spec_rough.Text = value
         self.spec_rough.SignType = sign  # 0 - Без указания типа отбработки; 1 - С удалением слоя материала; 2 - Без удаления слоя материала.
@@ -154,8 +169,12 @@ if __name__ == "__main__":
         # шереховатеость
         kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname, int(config['Settings']['recopy']))
     elif kompas_api.check_doc_type() == 0:
-        if not kompas_api.specification_description.ShowOnSheet:
+        if kompas_api.specification_description is None:
             kompas_api.add_drawing_number()  # если это сборка, то добавить СБ в номер
+        elif kompas_api.specification_description.ShowOnSheet:
+            kompas_api.delete_drawing_number()  # если есть спецификация на листе, то убрать СБ
+        else:
+            kompas_api.add_drawing_number()
         kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname, int(config['Settings']['recopy']))  # если это
         # спецификация, то не печатается Т.Контр
     kompas_api.add_stamp_string(id_developer_surname, developer_surname, int(config['Settings']['recopy']))
