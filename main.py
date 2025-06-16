@@ -130,7 +130,9 @@ def config_create(path_name):  # Создание конфиг файла
         config.set('Surnames', 'company_name', r'ООО "Рога \nи копыта"')
         config.set('default_rough', 'rough', 'Ra 12,5')
         config.set('default_rough', 'rough_sign', '0')
-        config.set('Settings', 'recopy', '0')
+        config.set('Settings', 'recopy', '1')
+        config.set('Settings', 'first_used', '1')
+        config.set('Settings', 'date_format', '%%d.%%m.%%y')
         with open(os.path.join(path_name, 'config.ini'), 'w') as config_file:
             config.write(config_file)
     return config
@@ -159,8 +161,9 @@ if __name__ == "__main__":
     company_name = config['Surnames']['company_name']
     company_name = company_name.replace(r'\n', '\n')
 
-    now_day = dt.datetime.today()
-    date = str(now_day.day) + '.' + str(now_day.month) + '.' + str(now_day.year)
+    dateFormat = config['Settings']['date_format']
+
+    date = dt.datetime.today().strftime(dateFormat)  # чтение текущей даты и запись в необходимом формате
 
     kompas_api = KompasAPI()
 
