@@ -194,7 +194,8 @@ if __name__ == "__main__":
     kompas_api = KompasAPI()
 
     if kompas_api.check_doc_type() == 1:
-        kompas_api.spec_rough_print(config['default_rough']['rough'], int(config['default_rough']['rough_sign']))  # если деталь, то напечатать неуказ.
+        if not kompas_api.spec_rough.IsCreated:
+            kompas_api.spec_rough_print(config['default_rough']['rough'], int(config['default_rough']['rough_sign']))  # если деталь, то напечатать неуказ.
         # шереховатеость
         kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname, int(config['Settings']['recopy']))
     elif kompas_api.check_doc_type() == 0:
