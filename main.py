@@ -8,6 +8,7 @@ import sys
 
 class KompasAPI:
     def __init__(self):
+        self.ShowOnSheet = 0
         #  Подключим описание интерфейсов API7
         self.api7 = gencache.EnsureModule("{69AC2981-37C0-4379-84FD-5DD2F3C0A520}", 0, 1, 0)
         self.application = self.api7.IApplication(
@@ -85,24 +86,22 @@ class KompasAPI:
         return 0  # Сборка - 0
 
     def first_used(self, value, flag):  # Обработка значения первичного применения. В Сб пишется тот же номер. В деталь убираются 000, в спецификации берется следующий без нулей
+        if flag == 0:
+            return ''
         doc_type = self.check_doc_type()
-        if doc_type == 1 and flag == 1:
-            i = value.rfind(".")
-            if value.rfind(".") == -1:
-                return value
-            part_code = list(value[i:])
-            part_code[2] = '0'
-            part_code[3] = '0'
-            part_code = ''.join(part_code)
-            s = value[:i] + part_code
-            return s
-        elif doc_type == 0 and flag == 1:
+        if doc_type == 1:
+            return convert(value)
+        elif self.ShowOnSheet == 1 and doc_type == 0:
+            return convert(value)
+        elif self.ShowOnSheet == 0 and doc_type == 0:
             i = value.rfind(" СБ")
             if value.rfind(" СБ") == -1:
                 return value
             s = value[:i]
             return s
-        return ''
+        elif doc_type == 2:
+            return convert(value)
+
 
 
 def config_create(path_name):  # Создание конфиг файла
@@ -136,6 +135,35 @@ def config_create(path_name):  # Создание конфиг файла
         with open(os.path.join(path_name, 'config.ini'), 'w') as config_file:
             config.write(config_file)
     return config
+
+
+def convert(code):
+    separator = '.'
+    res = code.split('.')
+    cell_for_replace = find_cell(res)
+
+    str = res[-1 - cell_for_replace]  # строка которая будет изменяться
+
+    if len(str) == 3 and cell_for_replace == 0:
+        if str[:1] != '0':
+            str = str[:1] + '00'
+        else:
+            str = '000'
+    elif len(str) < 3:
+        str = '00'
+    res[-1 - cell_for_replace] = str  # замена ячейки на нули
+    res = separator.join(res)  # соединение ячеек
+    return res
+
+
+def find_cell(res):
+    count = 0
+    for i in reversed(res):
+        for char in i:
+            if char != '0':
+                return count
+        count += 1
+    return count
 
 
 if __name__ == "__main__":
@@ -176,6 +204,7 @@ if __name__ == "__main__":
             kompas_api.add_drawing_number()  # если это сборка, то добавить СБ в номер
         elif kompas_api.specification_description.ShowOnSheet:
             kompas_api.delete_drawing_number()  # если есть спецификация на листе, то убрать СБ
+            kompas_api.ShowOnSheet = 1
         else:
             kompas_api.add_drawing_number()
         kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname, int(config['Settings']['recopy']))  # если это
