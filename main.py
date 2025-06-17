@@ -71,7 +71,6 @@ class KompasAPI:
             self.property = self.property_mng.GetProperty(self.kompas_document, 5.0)
             self.stamp.Text(1).Str = self.property_keeper.GetPropertyValue(self.property, "", True, True)[1]
 
-
     def spec_rough_print(self, value, sign):
         self.spec_rough.Text = value
         self.spec_rough.SignType = sign  # 0 - Без указания типа отбработки; 1 - С удалением слоя материала; 2 - Без удаления слоя материала.
@@ -101,7 +100,6 @@ class KompasAPI:
             return s
         elif doc_type == 2:
             return convert(value)
-
 
 
 def config_create(path_name):  # Создание конфиг файла
@@ -145,7 +143,7 @@ def convert(code):
     str = res[-1 - cell_for_replace]  # строка которая будет изменяться
 
     if len(str) == 3 and cell_for_replace == 0:
-        if str[:1] != '0':
+        if str[:1] != '0' and str[-1:] != '0':
             str = str[:1] + '00'
         else:
             str = '000'
