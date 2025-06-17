@@ -105,7 +105,7 @@ class KompasAPI:
 def config_create(path_name):  # Создание конфиг файла
     config = configparser.ConfigParser()
     if os.path.exists(os.path.join(path_name, 'config.ini')):
-        config.read(os.path.join(path_name, 'config.ini'), encoding="utf-8")
+        config.read(os.path.join(path_name, 'config.ini'))
     else:
         config.add_section('ID')
         config.add_section('Surnames')
@@ -140,7 +140,7 @@ def convert(code):
     res = code.split('.')
     cell_for_replace = find_cell(res)
 
-    str = res[-1 - cell_for_replace]  # строка которая будет изменяться
+    str = res[-1 - cell_for_replace]  # строка, которая будет изменяться
 
     if len(str) == 3 and cell_for_replace == 0:
         if str[:1] != '0' and str[-1:] != '0':
