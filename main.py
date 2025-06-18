@@ -1,3 +1,6 @@
+# TODO: Добавить обновление полей Наименование, обозначение, материал по связи с исходной моделью.
+# TODO: Сделать конфиг файл выше в папке.
+
 import pythoncom
 from win32com.client import Dispatch, gencache, VARIANT
 import datetime as dt
@@ -32,6 +35,8 @@ class KompasAPI:
                 self.views = self.views_and_layers_manager.Views
                 self.view = self.views.ActiveView
                 self.association_view = self.api7.IAssociationView(self.view)
+                if self.views.Count <= 1:
+                    sys.exit(2)
             self.property_mng = self.api7.IPropertyMng(self.application)
             self.property_keeper = self.api7.IPropertyKeeper(self.kompas_document_2d)
         else:
