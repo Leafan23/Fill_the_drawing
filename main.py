@@ -105,10 +105,10 @@ class KompasAPI:
 def config_create(path_name):  # Создание конфиг файла
     config = configparser.ConfigParser()
     if os.path.exists(os.path.join(path_name, 'config.ini')):
-        config.read(os.path.join(path_name, 'config.ini'))
+        config.read(os.path.join(path_name, 'config.ini'), encoding='utf-8')
     else:
-        config.add_section('ID')
         config.add_section('Surnames')
+        config.add_section('ID')
         config.add_section('default_rough')
         config.add_section('Settings')
         config.set('ID', 'id_developer_surname', '110')
@@ -130,7 +130,7 @@ def config_create(path_name):  # Создание конфиг файла
         config.set('Settings', 'recopy', '1')
         config.set('Settings', 'first_used', '1')
         config.set('Settings', 'date_format', '%%d.%%m.%%y')
-        with open(os.path.join(path_name, 'config.ini'), 'w') as config_file:
+        with open(os.path.join(path_name, 'config.ini'), 'w', encoding='utf-8') as config_file:
             config.write(config_file)
     return config
 
