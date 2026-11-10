@@ -1,13 +1,17 @@
 # TODO: Добавить обновление полей Наименование, обозначение, материал по связи с исходной моделью.
 # TODO: Сделать конфиг файл выше в папке.
 
+
+# Подходит для компаса 3D v24.
+# Так же возможно более низка версия для компаса в которой появилась функция округления массы.
+# На Компас v19 не работает.
+
 import pythoncom
 from win32com.client import Dispatch, gencache, VARIANT
 import datetime as dt
 import configparser
 import os.path
 import sys
-
 
 class KompasAPI:
     def __init__(self):
@@ -20,7 +24,9 @@ class KompasAPI:
 
         self.kompas_document = self.application.ActiveDocument
         # Document Type 1 - Чертеж; Document Type 3 - Спецификация.
+        self.first_used_file = ''
         if self.kompas_document.DocumentType == 1 or self.kompas_document.DocumentType == 3:
+            self.application.StopCurrentProcess(True, None)  # Остановка выполнения любых команд
             self.lay_out_sheets = self.kompas_document.LayoutSheets
             self.lay_out_sheet = self.lay_out_sheets.ItemByNumber(1)
             self.stamp = self.lay_out_sheet.Stamp
@@ -105,6 +111,7 @@ class KompasAPI:
             return s
         elif doc_type == 2:
             return convert(value)
+        return None
 
 
 def config_create(path_name):  # Создание конфиг файла
@@ -140,7 +147,12 @@ def config_create(path_name):  # Создание конфиг файла
     return config
 
 
-def convert(code):
+def convert(code: str):
+    """
+    Преобразует обозначение в первичное применение
+    Если файл из первичного применения не найден, то возвращает пустую строку
+    """
+
     separator = '.'
     res = code.split('.')
     cell_for_replace = find_cell(res)
@@ -156,10 +168,16 @@ def convert(code):
         str = '00'
     res[-1 - cell_for_replace] = str  # замена ячейки на нули
     res = separator.join(res)  # соединение ячеек
-    return res
+
+    # Проверить на присутствие файла первичного применения
+    kompas_api.first_used_file = kompas_api.kompas_document.Path + res + '.a3d'
+    if os.path.exists(kompas_api.first_used_file):
+        return res
+    else: return ''
 
 
 def find_cell(res):
+    """Возвращает номер ячейки для замены"""
     count = 0
     for i in reversed(res):
         for char in i:
@@ -167,6 +185,23 @@ def find_cell(res):
                 return count
         count += 1
     return count
+
+def round_mass():
+    """Округляет значение вне зависимости от единиц измерения"""
+    document_settings = kompas_api.kompas_document.DocumentSettings
+    drawing_document_settings = kompas_api.api7.IDrawingDocumentSettings(document_settings)
+
+    if drawing_document_settings.SheetStampMassUnit == 4:
+        return None
+    mass = kompas_api.stamp.Text(5).Str.replace(",", ".").split(" ")
+    mass = float(mass[0])
+    if mass < 10:
+        drawing_document_settings.SheetStampMassDigitsCount = 2
+    elif mass < 100:
+        drawing_document_settings.SheetStampMassDigitsCount = 1
+    else:
+        drawing_document_settings.SheetStampMassDigitsCount = 0
+    return None
 
 
 if __name__ == "__main__":
@@ -197,13 +232,14 @@ if __name__ == "__main__":
     date = dt.datetime.today().strftime(dateFormat)  # чтение текущей даты и запись в необходимом формате
 
     kompas_api = KompasAPI()
-
     if kompas_api.check_doc_type() == 1:
         if not kompas_api.spec_rough.IsCreated:
             kompas_api.spec_rough_print(config['default_rough']['rough'], int(config['default_rough']['rough_sign']))  # если деталь, то напечатать неуказ.
         # шереховатеость
         kompas_api.add_stamp_string(id_technical_inspector_surname, technical_inspector_surname, int(config['Settings']['recopy']))
+        round_mass()
     elif kompas_api.check_doc_type() == 0:
+        round_mass()
         if kompas_api.specification_description is None:
             kompas_api.add_drawing_number()  # если это сборка, то добавить СБ в номер
         elif kompas_api.specification_description.ShowOnSheet:
@@ -220,5 +256,12 @@ if __name__ == "__main__":
     kompas_api.add_stamp_string(id_company_name, company_name, int(config['Settings']['recopy']))
     kompas_api.add_stamp_string(id_date, date, int(config['Settings']['recopy']))
     kompas_api.add_stamp_string(int(config['ID']['id_first_used']), kompas_api.first_used(kompas_api.stamp.Text(2).Str, int(config['Settings']['first_used'])), int(config['Settings']['recopy']))
+
+    if kompas_api.stamp.Text(25).Str == '':
+        kompas_api.application.MessageBoxEx(f'Первичное применение не заполнено, '
+                                            f'\nвозможно отсутствует сборка по адресу {kompas_api.first_used_file}'
+                                            f'\n\nИли файл не сохранен',
+                                            'Ошибка первичного применения',
+                                            64)
 
     kompas_api.stamp.Update()
