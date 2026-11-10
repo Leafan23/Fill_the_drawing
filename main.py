@@ -152,6 +152,8 @@ def convert(code: str):
     Преобразует обозначение в первичное применение
     Если файл из первичного применения не найден, то возвращает пустую строку
     """
+    if code == '':
+        return ''
 
     separator = '.'
     res = code.split('.')
@@ -194,7 +196,10 @@ def round_mass():
     if drawing_document_settings.SheetStampMassUnit == 4:
         return None
     mass = kompas_api.stamp.Text(5).Str.replace(",", ".").split(" ")
-    mass = float(mass[0])
+    try:
+        mass = float(mass[0])
+    except:
+        return None
     if mass < 10:
         drawing_document_settings.SheetStampMassDigitsCount = 2
     elif mass < 100:
